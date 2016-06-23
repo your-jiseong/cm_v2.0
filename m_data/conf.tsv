@@ -4,3 +4,4 @@ qgm_addresses	http://121.254.173.77:38401/queries
 agm_addresses	http://121.254.173.77:7744/agm
 kb_addresses	http://dbpedia.org/sparql
 graph_uri	
+timeout	10000

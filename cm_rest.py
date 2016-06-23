@@ -29,7 +29,7 @@ def query():
 
   print 'Input:', i_text
   cmd = 'python cm_terminal.py ' + i_text
-  print cmd
+  print 'Command:', cmd
   p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
   stdout, stderr = p.communicate()
   o_text = stdout
@@ -39,4 +39,4 @@ def query():
   #response.headers['Content-type'] = 'application/json'
   return o_text
 
-run(host='121.254.173.77', port=7040)
+run(host='121.254.173.77', port=7041)
