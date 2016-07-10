@@ -130,25 +130,10 @@ def run_pipeline():
     # Fault alarming - Module error
     except Exception as e:
       fault({'message': 'TGM exception', 'exception': str(e), 'address': tgm, 'input': tgm_input})
-    # Fault alarming - Output error
-    if tgm_output_str == '':
-      fault({'message': 'TGM returns no results', 'address': tgm, 'input': tgm_input})
-    if tgm_output_str == 'null':
-      fault({'message': 'TGM returns null', 'address': tgm, 'input': tgm_input})
-    # Fault alarming - Encoding error
-    try:
-      tgm_output_str.decode('utf-8')
-    except:
-      fault({'message': 'TGM output is not UTF-8', 'address': tgm, 'input': tgm_input})
-    # Fault alarming - Output format error
-    try:
-      # Fault tolerance
-      if tgm == 'http://121.254.173.77:1555/templategeneration/templator/':
-        tgm_outputs.append(json.loads(tgm_output_str)[0])
-      else:
-        tgm_outputs.append(json.loads(tgm_output_str))
-    except:
-      fault({'message': 'TGM output is not JSON', 'address': tgm, 'input': tgm_input})
+   
+    # Fault checking
+    output_json = check_fault('TGM', tgm, tgm_input_str, tgm_output_str)
+    tgm_outputs.append(output_json)
 
   # ==================================
   # TGM output => DM inputs
@@ -179,21 +164,10 @@ def run_pipeline():
       # Fault alarming - Module error
       except Exception as e:
         fault({'message': 'DM exception', 'exception': str(e), 'address': dm, 'input': dm_input})
-      # Fault alarming - Output error
-      if dm_output_str == '':
-        fault({'message': 'DM returns no results', 'address': dm, 'input': dm_input})
-      if dm_output_str == 'null':
-        fault({'message': 'DM returns null', 'address': dm, 'input': dm_input})
-      # Fault alarming - Encoding error
-      try:
-        dm_output_str.decode('utf-8')
-      except:
-        fault({'message': 'DM output is not UTF-8', 'address': dm, 'input': dm_input})
-      # Fault alarming - Output format error
-      try:
-        dm_outputs.append(json.loads(dm_output_str))
-      except:
-        fault({'message': 'DM output is not JSON', 'address': dm, 'input': dm_input})
+      
+      # Fault checking
+      output_json = check_fault('DM', dm, dm_input_str, dm_output_str)
+      dm_outputs.append(output_json)
 
     # ==================================
     # DM output => QGM inputs
@@ -217,65 +191,64 @@ def run_pipeline():
         try:
             qgm_output_str = send_postrequest(qgm, qgm_input_str)
             write_log({'address': qgm, 'QGM output': json.loads(qgm_output_str)})
-
         # Fault alarming - Module error
         except Exception as e:
           fault({'message': 'QGM exception', 'exception': str(e), 'address': qgm, 'input': qgm_input})
-        # Fault alarming - Output error
-        if qgm_output_str == '':
-          fault({'message': 'QGM returns no results', 'address': qgm, 'input': qgm_input})
-        if qgm_outputs == 'null':
-          fault({'message': 'QGM returns null', 'address': qgm, 'input': qgm_input})
-        # Fault alarming - Encoding error
-        try:
-          qgm_output_str.decode('utf-8')
-        except:
-          fault({'message': 'QGM output is not UTF-8', 'address': qgm, 'input': qgm_input})
-        # Fault alarming - Output format error
-        try:
-          qgm_outputs.append(json.loads(qgm_output_str))
-        except:
-          fault({'message': 'QGM output is not JSON', 'address': qgm, 'input': qgm_input})
+        
+        # Fault checking
+        output_json = check_fault('QGM', qgm, qgm_input_str, qgm_output_str)
+        qgm_outputs.append(output_json)
 
       # ==================================
       # QGM output => AGM inputs
       # ==================================
-      agm_inputs = qgm_outputs[0]
+      agm_input = qgm_outputs[0]
 
       # ==================================
       # AGM
       # ==================================
-      write_log({'AGM input': agm_inputs})
+      write_log({'AGM input': agm_input})
       for agm in conf['agm_addresses']:
         agm_outputs = []
 
         #agm_inputs_str = json.dumps(agm_inputs, indent=5, separators=(',', ': '))
-        agm_inputs_str = json.dumps(agm_inputs)
+        agm_input_str = json.dumps(agm_input)
         #write_log({'agm_input', agm_inputs_str})
         try:
-            agm_output_str = send_postrequest(agm, agm_inputs_str).encode('utf-8')
+            agm_output_str = send_postrequest(agm, agm_input_str).encode('utf-8')
         # Fault alarming - Module error
         except Exception as e:
-          fault({'message': 'AGM exception', 'exception': str(e), 'address': agm, 'input': agm_inputs})
-        # Fault alarming - Output error
-        if agm_output_str == '':
-          fault({'message': 'AGM returns no results', 'address': agm, 'input': agm_inputs})
-        if agm_output_str == 'null':
-          fault({'message': 'AGM returns null', 'address': agm, 'input': agm_inputs})
-        # Fault alarming - Encoding error
-        try:
-          agm_output_str.decode('utf-8')
-        except:
-          fault({'message': 'AGM output is not UTF-8', 'address': agm, 'input': agm_inputs})
-        # Fault alarming - Output format error
-        try:
-          agm_outputs += json.loads(agm_output_str)
-        except:
-          fault({'message': 'AGM output is not JSON', 'address': agm, 'input': agm_inputs})
+          fault({'message': 'AGM exception', 'exception': str(e), 'address': agm, 'input': agm_input})
+        
+        # Fault checking
+        output_json = check_fault('AGM', agm, agm_input_str, agm_output_str)
+        answers += output_json
 
-        write_log({'address': agm, 'AGM output': agm_outputs})
 
-        answers += agm_outputs
+def check_fault(module_name, address, input_str, output_str):
+  # Fault alarming - Output error
+  if output_str == '':
+    fault({'message': module_name + ' returns no results', 'address': address, 'input': input_str})
+  if output_str.lower() == 'null':
+    fault({'message': module_name + ' returns null', 'address': address, 'input': input_str})
+  
+  # Fault alarming - Encoding error
+  try:
+    output_str.decode('utf-8')
+  except:
+    fault({'message': module_name + ' output is not UTF-8', 'address': address, 'input': input_str})
+  
+  # Fault alarming - Output format error
+  try:
+    # Fault tolerance
+    if address == 'http://121.254.173.77:1555/templategeneration/templator/':
+      outp_json = json.loads(output_str)[0]
+    else:
+      outp_json = json.loads(output_str)
+  except:
+    fault({'message': module_name + ' output is not JSON', 'address': address, 'input': input_str})
+
+  return outp_json
 
 
 def send_getrequest(url):
