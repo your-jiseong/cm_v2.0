@@ -175,7 +175,7 @@ def run_pipeline():
     qgm_inputs = []
     for dm_output in dm_outputs:
       # Fault tolerance
-      qgm_inputs.append({'template':dm_input, 'disambiguation':dm_output['ned'][0]})
+      qgm_inputs.append({'template':dm_input, 'disambiguation': dm_output['ned'][0]})
     
     # ==================================
     # QGM
@@ -202,27 +202,26 @@ def run_pipeline():
       # ==================================
       # QGM output => AGM inputs
       # ==================================
-      agm_input = qgm_outputs[0]
+      agm_inputs = qgm_outputs
 
       # ==================================
       # AGM
       # ==================================
-      write_log({'AGM input': agm_input})
-      for agm in conf['agm_addresses']:
-        agm_outputs = []
-
+      for agm_input in agm_inputs:
         #agm_inputs_str = json.dumps(agm_inputs, indent=5, separators=(',', ': '))
+        write_log({'AGM input': agm_input})
         agm_input_str = json.dumps(agm_input)
-        #write_log({'agm_input', agm_inputs_str})
-        try:
-            agm_output_str = send_postrequest(agm, agm_input_str).encode('utf-8')
-        # Fault alarming - Module error
-        except Exception as e:
-          fault({'message': 'AGM exception', 'exception': str(e), 'address': agm, 'input': agm_input})
-        
-        # Fault checking
-        output_json = check_fault('AGM', agm, agm_input_str, agm_output_str)
-        answers += output_json
+        for agm in conf['agm_addresses']:
+          try:
+              agm_output_str = send_postrequest(agm, agm_input_str).encode('utf-8')
+              write_log({'address': agm, 'AGM output': json.loads(agm_output_str)})
+          # Fault alarming - Module error
+          except Exception as e:
+            fault({'message': 'AGM exception', 'exception': str(e), 'address': agm, 'input': agm_input})
+          
+          # Fault checking
+          output_json = check_fault('AGM', agm, agm_input_str, agm_output_str)
+          answers += output_json
 
 
 def check_fault(module_name, address, input_str, output_str):
