@@ -126,6 +126,7 @@ def run_pipeline():
     tgm_output_str = 'null'
     try:
       tgm_output_str = send_postrequest(tgm, tgm_input_str)
+
       write_log({'address': tgm, 'TGM output': json.loads(tgm_output_str)})
     # Fault alarming - Module error
     except Exception as e:
